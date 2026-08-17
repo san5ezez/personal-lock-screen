@@ -1,0 +1,7 @@
+name = "personal-lock-api"
+main = "src/index.js"
+compatibility_date = "2026-08-17"
+
+[[kv_namespaces]]
+binding = "LOCK_KV"
+id = "PASTE_KV_NAMESPACE_ID_HERE"

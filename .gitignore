@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+.env
+.dev.vars
+.wrangler/
+winlogon_shell_backup.txt
+secrets.json
