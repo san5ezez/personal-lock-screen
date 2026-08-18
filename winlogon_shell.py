@@ -18,7 +18,11 @@ if getattr(sys, "frozen", False):
 else:
     BASE_DIR = Path(__file__).resolve().parent
 LOCK_SCREEN_SCRIPT = BASE_DIR / "lock_screen.py"
-LOCK_SCREEN_EXE = BASE_DIR / "lock_screen.exe"
+if BASE_DIR.name.lower() == "winlogon_shell":
+    LOCK_SCREEN_EXE = BASE_DIR.parent / "lock_screen" / "lock_screen.exe"
+else:
+    LOCK_SCREEN_EXE = BASE_DIR / "lock_screen" / "lock_screen.exe"
+LEGACY_LOCK_SCREEN_EXE = BASE_DIR / "lock_screen.exe"
 
 
 def main() -> None:
@@ -26,6 +30,8 @@ def main() -> None:
     environment["PERSONAL_LOCK_WINLOGON"] = "1"
     if LOCK_SCREEN_EXE.exists():
         command = [str(LOCK_SCREEN_EXE)]
+    elif LEGACY_LOCK_SCREEN_EXE.exists():
+        command = [str(LEGACY_LOCK_SCREEN_EXE)]
     elif LOCK_SCREEN_SCRIPT.exists():
         command = [sys.executable, str(LOCK_SCREEN_SCRIPT)]
     else:

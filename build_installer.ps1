@@ -25,7 +25,7 @@ if (-not $iscc) {
 Remove-Item -LiteralPath $distDir -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath $workDir -Recurse -Force -ErrorAction SilentlyContinue
 
-$pyArgs = @('--noconfirm', '--clean', '--windowed', '--onefile', '--name', 'lock_screen',
+$pyArgs = @('--noconfirm', '--clean', '--windowed', '--onedir', '--name', 'lock_screen',
     '--distpath', $distDir, '--workpath', $workDir, '--specpath', $workDir)
 if ($pyinstaller) {
     & $pyinstaller.Source @pyArgs (Join-Path $projectDir 'lock_screen.py')
@@ -33,7 +33,7 @@ if ($pyinstaller) {
     & python -m PyInstaller @pyArgs (Join-Path $projectDir 'lock_screen.py')
 }
 
-$pyArgs = @('--noconfirm', '--clean', '--windowed', '--onefile', '--name', 'winlogon_shell',
+$pyArgs = @('--noconfirm', '--clean', '--windowed', '--onedir', '--name', 'winlogon_shell',
     '--distpath', $distDir, '--workpath', $workDir, '--specpath', $workDir)
 if ($pyinstaller) {
     & $pyinstaller.Source @pyArgs (Join-Path $projectDir 'winlogon_shell.py')

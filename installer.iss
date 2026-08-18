@@ -1,5 +1,5 @@
 #define MyAppName "Personal Lock Screen"
-#define MyAppVersion "1.1.1"
+#define MyAppVersion "1.1.2"
 
 [Setup]
 AppId={{B4BDB4B4-67CC-4F50-8D2D-6B98F9F8D8F1}
@@ -16,8 +16,8 @@ UninstallDisplayName={#MyAppName}
 Uninstallable=yes
 
 [Files]
-Source: "dist\lock_screen.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "dist\winlogon_shell.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "dist\lock_screen\*"; DestDir: "{app}\lock_screen"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "dist\winlogon_shell\*"; DestDir: "{app}\winlogon_shell"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "README.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
@@ -78,7 +78,7 @@ begin
       RegWriteStringValue(HKCU, BackupKey, 'PreviousShell', BackupShell)
     else
       RegDeleteValue(HKCU, BackupKey, 'PreviousShell');
-    RegWriteStringValue(HKCU, WinlogonKey, 'Shell', ExpandConstant('{app}\winlogon_shell.exe'));
+    RegWriteStringValue(HKCU, WinlogonKey, 'Shell', ExpandConstant('{app}\winlogon_shell\winlogon_shell.exe'));
     RegWriteStringValue(HKCU, 'Environment', 'PERSONAL_LOCK_PASSWORD', PasswordPage.Values[0]);
     if LanguagePage.SelectedValueIndex = 1 then
       RegWriteStringValue(HKCU, 'Environment', 'PERSONAL_LOCK_LANGUAGE', 'en')
