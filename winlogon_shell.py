@@ -7,6 +7,7 @@ Explorer is restored. The registry setup is performed by install_winlogon.ps1.
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 
@@ -16,7 +17,6 @@ if getattr(sys, "frozen", False):
     BASE_DIR = Path(sys.executable).resolve().parent
 else:
     BASE_DIR = Path(__file__).resolve().parent
-
 LOCK_SCREEN_SCRIPT = BASE_DIR / "lock_screen.py"
 LOCK_SCREEN_EXE = BASE_DIR / "lock_screen.exe"
 
@@ -37,8 +37,18 @@ def main() -> None:
         subprocess.Popen(["explorer.exe"], close_fds=True)
         return
 
-    subprocess.run(command, cwd=str(BASE_DIR), env=environment)
-    subprocess.Popen(["explorer.exe"], close_fds=True)
+    failures = 0
+    while True:
+        result = subprocess.run(command, cwd=str(BASE_DIR), env=environment)
+        if result.returncode == 0:
+            subprocess.Popen(["explorer.exe"], close_fds=True)
+            return
+        # A crash or forced termination must not be treated as authorization.
+        failures += 1
+        if failures >= 3:
+            subprocess.Popen(["explorer.exe"], close_fds=True)
+            return
+        time.sleep(1)
 
 
 if __name__ == "__main__":
