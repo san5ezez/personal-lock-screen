@@ -1,35 +1,65 @@
 # Personal Lock Screen
 
-Полноэкранная блокировка Windows с одноразовым кодом через Telegram и Cloudflare Workers.
+[RU](README_RU.md) | **EN**
 
-Проект предназначен для добровольного ограничения доступа к собственному компьютеру. Он не удаляет файлы, не шифрует данные и не отключает системные механизмы безопасности Windows.
+Application-level fullscreen self-lock screen for Windows with one-time codes delivered through Telegram and Cloudflare Workers.
 
-## Как это работает
+> This project is designed for voluntary self-control on your own computer. It is not a replacement for the Windows sign-in screen and does not protect against Task Manager or administrator access.
+
+## Features
+
+- Fullscreen lock screen for the current Windows user.
+- Russian / English language choice during installation.
+- The selected language is used by the lock screen and Telegram bot.
+- New six-digit `PC_ID` on every launch.
+- One-time OTP delivered through Telegram.
+- OTP verification through Cloudflare Workers.
+- Backup password requested during installation.
+- Backup password protected with Windows DPAPI after first launch.
+- Keyboard layout indicator (`RU`, `EN`, `DE`, `FR`, `UK`).
+- Winlogon Shell integration with recovery fallback.
+- Telegram token stored only in Cloudflare Secrets, never in the client.
+
+## How it works
 
 ```text
-lock_screen.py -> Cloudflare Worker -> Telegram Bot
+lock_screen.exe -> Cloudflare Worker -> Telegram Bot
 ```
 
-При каждом запуске создаётся новый шестизначный `PC_ID`. Отправьте боту:
+At startup the application displays a six-digit `PC_ID`, for example:
 
 ```text
-/start 123456
+482913
 ```
 
-После этого бот отправит одноразовый код, который проверяется через Worker.
+Send the following command to your Telegram bot:
 
-## Настройка Worker
+```text
+/start 482913
+```
 
-В папке `cloudflare-worker` выполните:
+The bot sends a one-time code. Enter it in the lock screen.
+
+The `PC_ID` changes on every launch and is not a secret. Security is provided by the temporary OTP and Telegram chat binding.
+
+## Cloudflare Worker setup
+
+Open the `cloudflare-worker` directory:
 
 ```powershell
 npx wrangler login
 npx wrangler kv namespace create LOCK_KV
 ```
 
-Скопируйте выданный ID в `cloudflare-worker/wrangler.toml` вместо `PASTE_KV_NAMESPACE_ID_HERE`.
+Copy the returned KV namespace ID into `cloudflare-worker/wrangler.toml`:
 
-Добавьте секреты и опубликуйте Worker:
+```toml
+[[kv_namespaces]]
+binding = "LOCK_KV"
+id = "YOUR_KV_NAMESPACE_ID"
+```
+
+Create the secrets and deploy:
 
 ```powershell
 npx wrangler secret put BOT_TOKEN
@@ -37,55 +67,61 @@ npx wrangler secret put WEBHOOK_SECRET
 npx wrangler deploy
 ```
 
-Значения секретов вводятся только после приглашения `Enter a secret value:`. Не вставляйте токен в саму команду.
+When Wrangler asks for `Enter a secret value:`, paste the value there. Do not put tokens in the command itself.
 
-Затем замените URL в `lock_screen.py`:
+Set your deployed Worker URL in `lock_screen.py`:
 
 ```python
 API_URL = "https://YOUR-WORKER.workers.dev"
 ```
 
-## Запуск
+## Installation
 
-Установщик сначала предлагает выбрать язык `Русский` или `English`. Выбор используется интерфейсом блокировки и сообщениями Telegram-бота.
+Run `PersonalLockScreenSetup.exe`.
 
-```powershell
-$env:PERSONAL_LOCK_PASSWORD = "your-private-password"
-python .\lock_screen.py
-```
+1. Select `Русский` or `English`.
+2. Set the backup password.
+3. Confirm the password.
+4. Confirm the Winlogon Shell warning.
+5. Restart Windows.
 
-`PERSONAL_LOCK_PASSWORD` — резервный пароль для запуска из исходников. Установщик спрашивает его сам, а клиент после первого запуска переносит его в Windows DPAPI и удаляет переменную окружения.
+The selected language is saved for the current Windows user. The lock screen and Telegram messages use the same language.
 
-## Автозапуск Windows
+## Build the installer
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\install_startup.ps1
-```
-
-Для режима Winlogon Shell:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\install_winlogon.ps1
-```
-
-Откат выполняется скриптами `uninstall_startup.ps1` и `uninstall_winlogon.ps1`.
-
-## Сборка установщика
-
-Установите PyInstaller и Inno Setup, затем выполните:
+Install PyInstaller and Inno Setup, then run:
 
 ```powershell
 python -m pip install pyinstaller
 powershell -ExecutionPolicy Bypass -File .\build_installer.ps1
 ```
 
-Готовый файл появится в `installer-output`.
+The installer is created in `installer-output`.
 
-## Безопасность
+## Recovery and uninstall
 
-- Не добавляйте токены, chat ID, Worker ID и пароли в Git.
-- Если токен был опубликован, отзовите его через `@BotFather` и создайте новый.
-- Шестизначный `PC_ID` не является секретом; защиту обеспечивают OTP и привязка Telegram-чата.
-- OTP ограничен пятью попытками и действует пять минут.
-- При краше или принудительном завершении lock screen wrapper не считает это успешной авторизацией; после нескольких неудачных запусков он возвращает Explorer для восстановления системы.
-- Это блокировка уровня приложения, а не замена системному экрану входа Windows.
+If Explorer does not appear, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\emergency_restore_shell.ps1
+```
+
+To remove the Winlogon integration from source files:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\uninstall_winlogon.ps1
+```
+
+Do not delete the installation directory manually before restoring the Winlogon Shell.
+
+## Limitations
+
+- This is a self-control tool, not a security boundary.
+- Task Manager, administrator access, Safe Mode, and external recovery tools are not blocked.
+- OTP attempts are limited and expire, but a six-digit `PC_ID` is not a secret.
+
+## Security rules
+
+- Never commit Telegram tokens, chat IDs, passwords, Worker URLs, or KV IDs.
+- If a Telegram token is exposed, revoke it through `@BotFather` and create a new one.
+- Keep `.wrangler`, `.env`, and local secret files out of Git.
